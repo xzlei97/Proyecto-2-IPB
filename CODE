@@ -24,6 +24,7 @@ client = OpenAI(api_key=api_key) if api_key else None
 
 
 # FUNCIONES PRINCIPALES
+# Esto es una prueba (Joha)
 
 
 # Calcular %GC
