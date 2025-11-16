@@ -39,13 +39,13 @@ def calcular_gc(sequence):
 
 # Procesar archivos FASTA
 def procesar_fasta(ruta_actual):
-    resultados = []
+    resultados = []                  
     archivos_encontrados = []
 # Recorre todos los archivos en la carpeta que se especifica 
     for archivo in os.listdir(ruta_actual):
-        if archivo.endswith(".fasta") or archivo.endswith(".fa"):
-            archivos_encontrados.append(archivo)
-            ruta = os.path.join(ruta_actual, archivo)
+        if archivo.endswith(".fasta") or archivo.endswith(".fa"):      # Filtra los archivos con extensiones .fasta o .fa
+            archivos_encontrados.append(archivo)                       # Registra como encontrado 
+            ruta = os.path.join(ruta_actual, archivo)                  # Construye la ruta completa del archivo 
             try:
                 secuencias = list(SeqIO.parse(ruta, "fasta"))
                 if len(secuencias) > 0:
