@@ -41,7 +41,7 @@ def calcular_gc(sequence):
 def procesar_fasta(ruta_actual):
     resultados = []
     archivos_encontrados = []
-
+# Recorre todos los archivos en la carpeta que se especifica 
     for archivo in os.listdir(ruta_actual):
         if archivo.endswith(".fasta") or archivo.endswith(".fa"):
             archivos_encontrados.append(archivo)
