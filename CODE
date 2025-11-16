@@ -1,0 +1,154 @@
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+import streamlit as st
+from Bio import SeqIO
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# CONFIGURACIÓN INICIAL streamlit
+
+st.set_page_config(page_title="Análisis de Contenido GC", layout="centered")
+st.title("🧬 Comparación del contenido GC en genes 16S rRNA")
+
+# Cargar variables de entorno (.env)
+load_dotenv()
+
+# Inicializar cliente OpenAI (solo si hay API key)
+api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key) if api_key else None
+
+
+# FUNCIONES PRINCIPALES
+
+
+# Calcular %GC
+def calcular_gc(sequence):
+    sequence = sequence.upper().replace("\n", "").replace(" ", "")
+    g = sequence.count("G")
+    c = sequence.count("C")
+    a = sequence.count("A")
+    t = sequence.count("T")
+    total = g + c + a + t
+    return round(((g + c) / total) * 100, 2) if total > 0 else 0
+
+# Procesar archivos FASTA
+def procesar_fasta(ruta_actual):
+    resultados = []
+    archivos_encontrados = []
+
+    for archivo in os.listdir(ruta_actual):
+        if archivo.endswith(".fasta") or archivo.endswith(".fa"):
+            archivos_encontrados.append(archivo)
+            ruta = os.path.join(ruta_actual, archivo)
+            try:
+                secuencias = list(SeqIO.parse(ruta, "fasta"))
+                if len(secuencias) > 0:
+                    gc_valores = [calcular_gc(str(seq.seq)) for seq in secuencias]
+                    gc_promedio = sum(gc_valores) / len(gc_valores)
+                    nombre_organismo = os.path.splitext(archivo)[0]
+                    resultados.append({"Bacteria": nombre_organismo, "%GC": gc_promedio})
+            except Exception as e:
+                st.error(f"Error al procesar {archivo}: {str(e)}")
+
+    return resultados, archivos_encontrados
+
+
+# PROCESAMIENTO Y TABLA
+
+ruta_actual = os.getcwd()
+resultados, archivos_encontrados = procesar_fasta(ruta_actual)
+
+if not archivos_encontrados:
+    st.warning("⚠️ No se encontraron archivos .fasta o .fa en esta carpeta.")
+    st.info("Asegúrate de que los archivos FASTA estén en la misma carpeta que este script.")
+    st.stop()
+
+st.success(f"✅ Se encontraron {len(archivos_encontrados)} archivo(s) FASTA.")
+
+if not resultados:
+    st.error("No se pudieron procesar los archivos FASTA. Verifica el formato de los archivos.")
+    st.stop()
+
+df = pd.DataFrame(resultados).sort_values("%GC", ascending=False).reset_index(drop=True)
+
+# FILTRO INTERACTIVO
+
+st.sidebar.header("🔍 Filtro de bacterias")
+seleccion = st.sidebar.multiselect(
+    "Selecciona bacterias para visualizar:",
+    options=df["Bacteria"].tolist(),
+    default=df["Bacteria"].tolist()
+)
+
+df_filtrado = df[df["Bacteria"].isin(seleccion)]
+
+if df_filtrado.empty:
+    st.warning("No hay bacterias seleccionadas. Usa el filtro lateral para seleccionar.")
+    st.stop()
+
+# TABLA DE RESULTADOS
+
+st.subheader("📋 Tabla de resultados")
+st.dataframe(df_filtrado, use_container_width=True)
+
+# GRÁFICO
+
+st.subheader("📊 Gráfico comparativo del contenido GC")
+
+fig, ax = plt.subplots(figsize=(10, max(6, len(df_filtrado) * 0.4)))
+bars = ax.barh(df_filtrado["Bacteria"], df_filtrado["%GC"], color="mediumseagreen", edgecolor="black")
+
+min_gc = df_filtrado["%GC"].min()
+max_gc = df_filtrado["%GC"].max()
+margen = (max_gc - min_gc) * 0.1
+plt.xlim(max(0, min_gc - margen), min(100, max_gc + margen))
+
+for bar in bars:
+    ax.text(bar.get_width() + 0.3, bar.get_y() + bar.get_height() / 2,
+            f"{bar.get_width():.2f}%", va="center", fontsize=9)
+
+ax.set_xlabel("%GC", fontsize=12)
+ax.set_ylabel("Bacteria", fontsize=12)
+ax.set_title("Comparación del contenido GC en 16S rRNA", fontsize=14, fontweight="bold")
+ax.grid(axis="x", linestyle="--", alpha=0.6)
+ax.invert_yaxis()
+plt.tight_layout()
+st.pyplot(fig)
+
+# ANÁLISIS RESULTADOS
+
+mayor_gc = df.loc[df["%GC"].idxmax()]
+menor_gc = df.loc[df["%GC"].idxmin()]
+
+st.subheader("📈 Análisis de resultados")
+st.markdown(f"**Mayor contenido GC:** {mayor_gc['Bacteria']} ({mayor_gc['%GC']:.2f}%)")
+st.markdown(f"**Menor contenido GC:** {menor_gc['Bacteria']} ({menor_gc['%GC']:.2f}%)")
+
+
+# AGENTE IA 
+
+if client:
+    st.subheader(" 🧠 Análisis generado por IA")
+    prompt = f"""
+    El análisis muestra que {mayor_gc['Bacteria']} tiene el mayor contenido GC ({mayor_gc['%GC']}%)
+    y {menor_gc['Bacteria']} el menor ({menor_gc['%GC']}%).
+    Escribe un párrafo breve en español explicando qué significa biológicamente tener alto o bajo contenido GC
+    en genes 16S rRNA y cómo esto puede relacionarse con su ecología o estabilidad genómica.
+    """
+
+    try:
+        respuesta = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Eres un experto en biología molecular."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=200
+        )
+        st.write(respuesta.choices[0].message.content.strip())
+    except Exception as e:
+        st.warning(f"No se pudo generar el análisis automático: {e}")
+else:
+    st.info(" Para habilitar el análisis con IA, configura tu variable `OPENAI_API_KEY` en el archivo `.env`")
