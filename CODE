@@ -58,7 +58,7 @@ def procesar_fasta(ruta_actual):
 
     return resultados, archivos_encontrados
 
-
+# Prueba 3 
 # PROCESAMIENTO Y TABLA
 
 ruta_actual = os.getcwd()
