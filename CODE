@@ -6,7 +6,9 @@ from Bio import SeqIO
 from dotenv import load_dotenv
 from openai import OpenAI
 
-#PRUEBA EDICION
+#PRUEBA EDICION 
+
+#segunda prueba de edicion 
 
 # CONFIGURACIÓN INICIAL streamlit
 
