@@ -6,6 +6,8 @@ from Bio import SeqIO
 from dotenv import load_dotenv
 from openai import OpenAI
 
+#PRUEBA EDICION
+
 # CONFIGURACIÓN INICIAL streamlit
 
 st.set_page_config(page_title="Análisis de Contenido GC", layout="centered")
