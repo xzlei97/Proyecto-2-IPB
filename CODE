@@ -131,19 +131,18 @@ st.markdown(f"**Menor contenido GC:** {menor_gc['Bacteria']} ({menor_gc['%GC']:.
 if client:   #if se accede a cliente (revisar # Inicializar cliente OpenAI (solo si hay API key en el .dev)), se ejecuta lo siguiente
     st.subheader(" 🧠 Análisis generado por IA")
 
-    datos_json = df.to_json(orient="records")      #Se guardan los records en una variable json, esta info es la que se le da al agente
+    tabla = df.to_markdown(index=False)
 
     prompt = f"""
-    A continuación tienes una lista de microorganismos con su contenido GC en formato JSON:
+    A continuación tienes una lista de microorganismos con su contenido GC:
 
-    {datos_json}                                                
+    {tabla}
 
-    Con esta información: 
-    1. Identifica cuál microorganismo tiene el mayor porcentaje de GC.
-    2. Identifica cuál tiene el menor porcentaje de GC.
-    3. Indica los valores exactos.
-    4. Escribe un párrafo breve explicando qué significa biológicamente tener alto o bajo contenido GC
-   en genes 16S rRNA y cómo esto influye en su ecología o estabilidad genómica.
+    Con esta información:
+    1. Identifica cuál microorganismo tiene el mayor porcentaje de GC y su porcentaje exacto.
+    2. Identifica cuál tiene el menor porcentaje de GC y su porcentajer exacto. 
+    3. Escribe un párrafo breve explicando qué significa biológicamente tener alto o bajo contenido GC
+    en genes 16S rRNA y cómo esto influye en su ecología o estabilidad genómica.
 
     Responde en español de forma clara y breve.
     """
