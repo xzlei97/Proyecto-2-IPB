@@ -6,11 +6,8 @@ from Bio import SeqIO
 from dotenv import load_dotenv
 from openai import OpenAI
 
-#PRUEBA EDICION 
-
-#segunda prueba de edicion 
-
 # CONFIGURACIÓN INICIAL streamlit
+
 
 st.set_page_config(page_title="Análisis de Contenido GC", layout="centered")
 st.title("🧬 Comparación del contenido GC en genes 16S rRNA")
@@ -18,13 +15,12 @@ st.title("🧬 Comparación del contenido GC en genes 16S rRNA")
 # Cargar variables de entorno (.env)
 load_dotenv()
 
-# Inicializar cliente OpenAI (solo si hay API key)
+# Inicializar cliente OpenAI (solo si hay API key en el .dev)
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key) if api_key else None
 
 
 # FUNCIONES PRINCIPALES
-# Esto es una prueba (Joha)
 
 
 # Calcular %GC
@@ -58,18 +54,17 @@ def procesar_fasta(ruta_actual):
 
     return resultados, archivos_encontrados
 
-# Prueba 3 
 # PROCESAMIENTO Y TABLA
 
 ruta_actual = os.getcwd()
 resultados, archivos_encontrados = procesar_fasta(ruta_actual)
 
 if not archivos_encontrados:
-    st.warning("⚠️ No se encontraron archivos .fasta o .fa en esta carpeta.")
+    st.warning("No se encontraron archivos .fasta o .fa en esta carpeta.")
     st.info("Asegúrate de que los archivos FASTA estén en la misma carpeta que este script.")
     st.stop()
 
-st.success(f"✅ Se encontraron {len(archivos_encontrados)} archivo(s) FASTA.")
+st.success(f"Se encontraron {len(archivos_encontrados)} archivo(s) FASTA.")
 
 if not resultados:
     st.error("No se pudieron procesar los archivos FASTA. Verifica el formato de los archivos.")
@@ -126,23 +121,34 @@ st.pyplot(fig)
 mayor_gc = df.loc[df["%GC"].idxmax()]
 menor_gc = df.loc[df["%GC"].idxmin()]
 
-st.subheader("📈 Análisis de resultados")
+st.subheader("📈 Análisis de resultados")   #referencia de los valores para comprobar respuesta del agente
 st.markdown(f"**Mayor contenido GC:** {mayor_gc['Bacteria']} ({mayor_gc['%GC']:.2f}%)")
 st.markdown(f"**Menor contenido GC:** {menor_gc['Bacteria']} ({menor_gc['%GC']:.2f}%)")
 
 
 # AGENTE IA 
 
-if client:
+if client:   #if se accede a cliente (revisar # Inicializar cliente OpenAI (solo si hay API key en el .dev)), se ejecuta lo siguiente
     st.subheader(" 🧠 Análisis generado por IA")
+
+    datos_json = df.to_json(orient="records")      #Se guardan los records en una variable json, esta info es la que se le da al agente
+
     prompt = f"""
-    El análisis muestra que {mayor_gc['Bacteria']} tiene el mayor contenido GC ({mayor_gc['%GC']}%)
-    y {menor_gc['Bacteria']} el menor ({menor_gc['%GC']}%).
-    Escribe un párrafo breve en español explicando qué significa biológicamente tener alto o bajo contenido GC
-    en genes 16S rRNA y cómo esto puede relacionarse con su ecología o estabilidad genómica.
+    A continuación tienes una lista de microorganismos con su contenido GC en formato JSON:
+
+    {datos_json}                                                
+
+    Con esta información: 
+    1. Identifica cuál microorganismo tiene el mayor porcentaje de GC.
+    2. Identifica cuál tiene el menor porcentaje de GC.
+    3. Indica los valores exactos.
+    4. Escribe un párrafo breve explicando qué significa biológicamente tener alto o bajo contenido GC
+   en genes 16S rRNA y cómo esto influye en su ecología o estabilidad genómica.
+
+    Responde en español de forma clara y breve.
     """
 
-    try:
+    try:   #parametros para el agente
         respuesta = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
