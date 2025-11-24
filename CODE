@@ -37,9 +37,9 @@ def calcular_gc(sequence):
     return round(((g + c) / total) * 100, 2) if total > 0 else 0
 
 # Procesar archivos FASTA
-def procesar_fasta(ruta_actual):
-    resultados = []                  
-    archivos_encontrados = []
+def procesar_fasta(ruta_actual):                                       # Procesa todos los archivos FASTA en una carpeta
+    resultados = []                                                    # Almacena los resultados del analisis (bacteria y %GC)
+    archivos_encontrados = []                                          # Procesa que archivos fueron encontrados y procesados
 # Recorre todos los archivos en la carpeta que se especifica 
     for archivo in os.listdir(ruta_actual):
         if archivo.endswith(".fasta") or archivo.endswith(".fa"):      # Filtra los archivos con extensiones .fasta o .fa
