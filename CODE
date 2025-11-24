@@ -1,19 +1,18 @@
 #Autores: Leiner Vega, Johanna Castellon, Angelica Araya
 
 
-import os
-import pandas as pd
-import matplotlib.pyplot as plt
-import streamlit as st
-from Bio import SeqIO
-from dotenv import load_dotenv
-from openai import OpenAI
+import os                         # Manejo de archivos, carpetas y variables de entorno del sistema 
+import pandas as pd               # Manipula y analiza los datos en formato tabular 
+import matplotlib.pyplot as plt   # Crea graficos y visualizaciones 
+import streamlit as st            # Framework para crear aplicaciones web interactivas 
+from Bio import SeqIO             # Lee y escribe archivos de secuencias biologicas (FASTA)
+from dotenv import load_dotenv    # Carga variables de entorno desde archivos .env 
+from openai import OpenAI         # Cliente para interactuar con la API de OpenAI (GPT) 
 
 # CONFIGURACIÓN INICIAL streamlit
 
-
-st.set_page_config(page_title="Análisis de Contenido GC", layout="centered")
-st.title("🧬 Comparación del contenido GC en genes 16S rRNA")
+st.set_page_config(page_title="Análisis de Contenido GC", layout="centered")  # Configura la pagina de Streamlit 
+st.title("🧬 Comparación del contenido GC en genes 16S rRNA")                 # Muestra el titulo principal de la aplicacion 
 
 # Cargar variables de entorno (.env)
 load_dotenv()
