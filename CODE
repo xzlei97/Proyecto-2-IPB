@@ -39,25 +39,24 @@ def calcular_gc(sequence):
 # Procesar archivos FASTA
 def procesar_fasta(ruta_actual):                                       # Procesa todos los archivos FASTA en una carpeta
     resultados = []                                                    # Almacena los resultados del analisis (bacteria y %GC)
-    archivos_encontrados = []                                          # Procesa que archivos fueron encontrados y procesados
-# Recorre todos los archivos en la carpeta que se especifica 
-    for archivo in os.listdir(ruta_actual):
+    archivos_encontrados = []                                          # Procesa que archivos fueron encontrados y procesados 
+    for archivo in os.listdir(ruta_actual):                            # Recorre todos los archivos en la carpeta que se especifica
         if archivo.endswith(".fasta") or archivo.endswith(".fa"):      # Filtra los archivos con extensiones .fasta o .fa
             archivos_encontrados.append(archivo)                       # Registra como encontrado 
             ruta = os.path.join(ruta_actual, archivo)                  # Construye la ruta completa del archivo 
-            try:
-                secuencias = list(SeqIO.parse(ruta, "fasta"))
-                if len(secuencias) > 0:
-                    gc_valores = [calcular_gc(str(seq.seq)) for seq in secuencias]
-                    gc_promedio = sum(gc_valores) / len(gc_valores)
-                    nombre_organismo = os.path.splitext(archivo)[0]
-                    resultados.append({"Bacteria": nombre_organismo, "%GC": gc_promedio})
-            except Exception as e:
-                st.error(f"Error al procesar {archivo}: {str(e)}")
+            try:                                                       # Intenta procesar el archivo con manejo de errores 
+                secuencias = list(SeqIO.parse(ruta, "fasta"))          # Lee todas las secuencias del archivo FASTA 
+                if len(secuencias) > 0:                                # Verifica que hay al menos una secuencia valida 
+                    gc_valores = [calcular_gc(str(seq.seq)) for seq in secuencias]  # Calcula el %GC de cada secuencia usando lista por comprension 
+                    gc_promedio = sum(gc_valores) / len(gc_valores)                 # Calcula el promedio de todos los valores GC del archivo 
+                    nombre_organismo = os.path.splitext(archivo)[0]                 # Extrae el nombre del organismo (nombre del archivo sin extension)
+                    resultados.append({"Bacteria": nombre_organismo, "%GC": gc_promedio})  # Agrega resultados a la lista 
+            except Exception as e:                                                         # Identifica cualquier error durante el procesamiento 
+                st.error(f"Error al procesar {archivo}: {str(e)}")                         # Muestra un mensaje de error en la interfaz 
 
-    return resultados, archivos_encontrados
+    return resultados, archivos_encontrados                                                # Devuelve los resultados y lista de archivos procesados 
 
-# PROCESAMIENTO Y TABLA
+# PROCESAMIENTO Y TABLA 
 
 ruta_actual = os.getcwd()
 resultados, archivos_encontrados = procesar_fasta(ruta_actual)
