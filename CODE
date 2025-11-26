@@ -15,11 +15,11 @@ st.set_page_config(page_title="Análisis de Contenido GC", layout="centered")  #
 st.title("🧬 Comparación del contenido GC en genes 16S rRNA")                 # Muestra el titulo principal de la aplicacion 
 
 # Cargar variables de entorno (.env)
-load_dotenv()
+load_dotenv()                     # Permite mantener información sensible como API keys fuera del código
 
-# Inicializar cliente OpenAI (solo si hay API key en el .dev)
+# Inicializa cliente OpenAI (solo si hay API key en el .dev)
 api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key) if api_key else None
+client = OpenAI(api_key=api_key) if api_key else None  # Si no hay key, asigna None y la app funcionará sin funcionalidades de IA
 
 
 # FUNCIONES PRINCIPALES
@@ -27,12 +27,12 @@ client = OpenAI(api_key=api_key) if api_key else None
 
 # Calcular %GC
 def calcular_gc(sequence):
-    sequence = sequence.upper().replace("\n", "").replace(" ", "")
+    sequence = sequence.upper().replace("\n", "").replace(" ", "")   # Limpia la secuencia, convierte a mayusculas, elimina espacios/saltos de linea
     g = sequence.count("G")
     c = sequence.count("C")
     a = sequence.count("A")
     t = sequence.count("T")
-    total = g + c + a + t
+    total = g + c + a + t      # Ignora caracteres no estandar y calcula solo el total de bases validas
     return round(((g + c) / total) * 100, 2) if total > 0 else 0
 
 # Procesar archivos FASTA
@@ -53,25 +53,25 @@ def procesar_fasta(ruta_actual):                                       # Procesa
             except Exception as e:                                                         # Identifica cualquier error durante el procesamiento 
                 st.error(f"Error al procesar {archivo}: {str(e)}")                         # Muestra un mensaje de error en la interfaz 
 
-    return resultados, archivos_encontrados                                                # Devuelve los resultados y lista de archivos procesados 
+    return resultados, archivos_encontrados                                               
 
 # PROCESAMIENTO Y TABLA 
 
 ruta_actual = os.getcwd()
 resultados, archivos_encontrados = procesar_fasta(ruta_actual)
 
-if not archivos_encontrados:
+if not archivos_encontrados:        # Valida que se encontraron archivos FASTA
     st.warning("No se encontraron archivos .fasta o .fa en esta carpeta.")
     st.info("Asegúrate de que los archivos FASTA estén en la misma carpeta que este script.")
-    st.stop()
+    st.stop()                       # Detiene la ejecución si no hay archivos 
 
 st.success(f"Se encontraron {len(archivos_encontrados)} archivo(s) FASTA.")
 
-if not resultados:
+if not resultados:                  # Valida que se procesaron los archivos (no vacios/corruptos)
     st.error("No se pudieron procesar los archivos FASTA. Verifica el formato de los archivos.")
     st.stop()
 
-df = pd.DataFrame(resultados).sort_values("%GC", ascending=False).reset_index(drop=True)
+df = pd.DataFrame(resultados).sort_values("%GC", ascending=False).reset_index(drop=True)  # Crea el DataFrame y ordena por %GC de mayor a menor
 
 # FILTRO INTERACTIVO
 
@@ -82,9 +82,9 @@ seleccion = st.sidebar.multiselect(
     default=df["Bacteria"].tolist()
 )
 
-df_filtrado = df[df["Bacteria"].isin(seleccion)]
+df_filtrado = df[df["Bacteria"].isin(seleccion)]  # Filtra el DataFrame segun la seleccion del usuario
 
-if df_filtrado.empty:
+if df_filtrado.empty:    # Valida que hay al menos una bacteria seleccionada
     st.warning("No hay bacterias seleccionadas. Usa el filtro lateral para seleccionar.")
     st.stop()
 
@@ -97,7 +97,7 @@ st.dataframe(df_filtrado, use_container_width=True)
 
 st.subheader("📊 Gráfico comparativo del contenido GC")
 
-fig, ax = plt.subplots(figsize=(10, max(6, len(df_filtrado) * 0.4)))
+fig, ax = plt.subplots(figsize=(10, max(6, len(df_filtrado) * 0.4)))   # Crea figura con tamaño dinamico que crece segun el numero de bacterias
 bars = ax.barh(df_filtrado["Bacteria"], df_filtrado["%GC"], color="mediumseagreen", edgecolor="black")
 
 min_gc = df_filtrado["%GC"].min()
@@ -129,11 +129,12 @@ st.markdown(f"**Menor contenido GC:** {menor_gc['Bacteria']} ({menor_gc['%GC']:.
 
 # AGENTE IA 
 
-if client:   #if se accede a cliente (revisar # Inicializar cliente OpenAI (solo si hay API key en el .dev)), se ejecuta lo siguiente
+if client:   # Solo ejecuta si el cliente de OpenAI esta inicializado (hay API) 
     st.subheader(" 🧠 Análisis generado por IA")
 
     tabla = df.to_markdown(index=False)
 
+    # Instrucciones para el modelo de IA 
     prompt = f"""
     A continuación tienes una lista de microorganismos con su contenido GC:
 
@@ -148,18 +149,18 @@ if client:   #if se accede a cliente (revisar # Inicializar cliente OpenAI (solo
     Responde en español de forma clara y breve.
     """
 
-    try:   #parametros para el agente
-        respuesta = client.chat.completions.create(
+    try:   # Parametros para el agente (Intenta hacer la consulta a la API de OpenAI)
+        respuesta = client.chat.completions.create( # Hace la solicitud a GPT-4o-mini  
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Eres un experto en biología molecular."},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": "Eres un experto en biología molecular."}, # Define el rol/comportamiento del modelo
+                {"role": "user", "content": prompt} # Instrucciones/pregunta 
             ],
-            temperature=0.7,
-            max_tokens=200
+            temperature=0.7,    # Nivel de creatividad (0=preciso, 1=creativo)
+            max_tokens=200      # Limite de longitud de respuesta 
         )
         st.write(respuesta.choices[0].message.content.strip())
-    except Exception as e:
-        st.warning(f"No se pudo generar el análisis automático: {e}")
-else:
+    except Exception as e:      # Identifica cualquier error en la llamada a la API 
+        st.warning(f"No se pudo generar el análisis automático: {e}") 
+else:                           # Si no hay cliente de OpenAI (API key) 
     st.info(" Para habilitar el análisis con IA, configura tu variable `OPENAI_API_KEY` en el archivo `.env`")
